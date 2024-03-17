@@ -2,9 +2,9 @@
 pragma solidity ^0.8.24;
 
 import { IERC20 } from "openzeppelin/token/ERC20/IERC20.sol";
-import { ILiquidationSource } from "pt-v5-liquidator-interfaces/interfaces/ILiquidationSource.sol";
-import { ILiquidationPair } from "pt-v5-liquidator-interfaces/interfaces/ILiquidationPair.sol";
-import { IFlashSwapCallback } from "pt-v5-liquidator-interfaces/interfaces/IFlashSwapCallback.sol";
+import { ILiquidationSource } from "pt-v5-liquidator-interfaces/ILiquidationSource.sol";
+import { ILiquidationPair } from "pt-v5-liquidator-interfaces/ILiquidationPair.sol";
+import { IFlashSwapCallback } from "pt-v5-liquidator-interfaces/IFlashSwapCallback.sol";
 
 /// @notice Thrown when the actual swap amount in exceeds the user defined maximum amount in
 /// @param amountInMax The user-defined max amount in
@@ -51,7 +51,7 @@ contract FixedLiquidationPair is ILiquidationPair {
    * @notice Returns the token that is used to pay for auctions.
    * @return address of the token coming in
    */
-  function tokenIn() external returns (address) {
+  function tokenIn() external view returns (address) {
     return address(_tokenIn);
   }
 
@@ -59,7 +59,7 @@ contract FixedLiquidationPair is ILiquidationPair {
    * @notice Returns the token that is being auctioned.
    * @return address of the token coming out
    */
-  function tokenOut() external returns (address) {
+  function tokenOut() external view returns (address) {
     return address(_tokenOut);
   }
 
@@ -120,14 +120,15 @@ contract FixedLiquidationPair is ILiquidationPair {
     }
 
     source.verifyTokensIn(address(_tokenIn), swapAmountIn, transferTokensOutData);
+
+    return swapAmountIn;
   }
 
   /**
    * @notice Computes the exact amount of tokens to send in for the given amount of tokens to receive out.
-   * @param _amountOut The amount of tokens to receive out.
    * @return The amount of tokens to send in.
    */
-  function computeExactAmountIn(uint256 _amountOut) external returns (uint256) {
+  function computeExactAmountIn(uint256) external view returns (uint256) {
     return _computePrice();
   }
 }

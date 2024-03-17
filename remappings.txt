@@ -1,4 +1,4 @@
 ds-test/=lib/pt-v5-liquidator-interfaces/lib/forge-std/lib/ds-test/src/
 forge-std/=lib/pt-v5-liquidator-interfaces/lib/forge-std/src/
-pt-v5-liquidator-interfaces/=lib/pt-v5-liquidator-interfaces/src/
+pt-v5-liquidator-interfaces/=lib/pt-v5-liquidator-interfaces/src/interfaces/
 openzeppelin=lib/openzeppelin-contracts/contracts/
