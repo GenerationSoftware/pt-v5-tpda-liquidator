@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
+import { IERC20 } from "openzeppelin/token/ERC20/IERC20.sol";
 import { ILiquidationSource } from "pt-v5-liquidator-interfaces/interfaces/ILiquidationSource.sol";
 import { ILiquidationPair } from "pt-v5-liquidator-interfaces/interfaces/ILiquidationPair.sol";
+import { IFlashSwapCallback } from "pt-v5-liquidator-interfaces/interfaces/IFlashSwapCallback.sol";
 
 /// @notice Thrown when the actual swap amount in exceeds the user defined maximum amount in
 /// @param amountInMax The user-defined max amount in
@@ -12,11 +14,12 @@ error SwapExceedsMax(uint256 amountInMax, uint256 amountIn);
 contract FixedLiquidationPair is ILiquidationPair {
 
     ILiquidationSource public immutable source;
-    uint32 public immutable targetAuctionPeriod;
-    uint224 public immutable minimumAuctionAmount;
+    uint256 public immutable targetAuctionPeriod;
+    uint256 public immutable minimumAuctionAmount;
     IERC20 internal immutable _tokenIn;
+    IERC20 internal immutable _tokenOut;
 
-    uint48 public lastAuctionAt;
+    uint64 public lastAuctionAt;
     uint192 public lastAuctionPrice;  
 
     constructor (
@@ -24,23 +27,24 @@ contract FixedLiquidationPair is ILiquidationPair {
         address __tokenIn,
         address __tokenOut,
         uint256 _targetAuctionPeriod,
-        uint256 _minimumAuctionAmount
+        uint192 _minimumAuctionAmount
     ) {
         source = _source;
-        _tokenIn = __tokenIn;
+        _tokenIn = IERC20(__tokenIn);
+        _tokenOut = IERC20(__tokenOut);
         targetAuctionPeriod = _targetAuctionPeriod;
         minimumAuctionAmount = _minimumAuctionAmount;
 
-        lastAuctionAt = block.timestamp;
+        lastAuctionAt = uint64(block.timestamp);
         lastAuctionPrice = _minimumAuctionAmount;
     }
 
-    function _computePrice() internal view returns (uint256) {
+    function _computePrice() internal view returns (uint192) {
         uint256 elapsedTime = block.timestamp - lastAuctionAt;
         if (elapsedTime == 0) {
-            return type(uint).max;
+            return type(uint192).max;
         }
-        return (targetAuctionPeriod * lastAuctionPrice) / elapsedTime;
+        return uint192((targetAuctionPeriod * lastAuctionPrice) / elapsedTime);
     }
 
   /**
@@ -64,7 +68,7 @@ contract FixedLiquidationPair is ILiquidationPair {
    * @return Address of the target
    */
   function target() external returns (address) {
-    return source.targetOf(_tokenIn);
+    return source.targetOf(address(_tokenIn));
   }
 
   /**
@@ -72,7 +76,7 @@ contract FixedLiquidationPair is ILiquidationPair {
    * @return The maximum amount of tokens that can be swapped out.
    */
   function maxAmountOut() external returns (uint256) {  
-    return source.liquidatableBalanceOf(_tokenOut);
+    return source.liquidatableBalanceOf(address(_tokenOut));
   }
 
   /**
@@ -90,16 +94,19 @@ contract FixedLiquidationPair is ILiquidationPair {
     uint256 _amountInMax,
     bytes calldata _flashSwapData
   ) external returns (uint256) {
-    uint swapAmountIn = _computePrice();
+    uint192 swapAmountIn = _computePrice();
 
     if (swapAmountIn > _amountInMax) {
       revert SwapExceedsMax(_amountInMax, swapAmountIn);
     }
 
+    lastAuctionAt = uint64(block.timestamp);
+    lastAuctionPrice = swapAmountIn;
+
     bytes memory transferTokensOutData = source.transferTokensOut(
       msg.sender,
       _receiver,
-      _tokenOut,
+      address(_tokenOut),
       _amountOut
     );
 
@@ -112,7 +119,7 @@ contract FixedLiquidationPair is ILiquidationPair {
       );
     }
 
-    source.verifyTokensIn(_tokenIn, swapAmountIn, transferTokensOutData);
+    source.verifyTokensIn(address(_tokenIn), swapAmountIn, transferTokensOutData);
   }
 
   /**
