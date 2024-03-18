@@ -39,14 +39,6 @@ contract FixedLiquidationPair is ILiquidationPair {
         lastAuctionPrice = _minimumAuctionAmount;
     }
 
-    function _computePrice() internal view returns (uint192) {
-        uint256 elapsedTime = block.timestamp - lastAuctionAt;
-        if (elapsedTime == 0) {
-            return type(uint192).max;
-        }
-        return uint192((targetAuctionPeriod * lastAuctionPrice) / elapsedTime);
-    }
-
   /**
    * @notice Returns the token that is used to pay for auctions.
    * @return address of the token coming in
@@ -83,14 +75,13 @@ contract FixedLiquidationPair is ILiquidationPair {
    * @notice Swaps the given amount of tokens out and ensures the amount of tokens in doesn't exceed the given maximum.
    * @dev The amount of tokens being swapped in must be sent to the target before calling this function.
    * @param _receiver The address to send the tokens to.
-   * @param _amountOut The amount of tokens to receive out.
    * @param _amountInMax The maximum amount of tokens to send in.
    * @param _flashSwapData If non-zero, the _receiver is called with this data prior to
    * @return The amount of tokens sent in.
    */
   function swapExactAmountOut(
     address _receiver,
-    uint256 _amountOut,
+    uint256 /* _amountOut */,
     uint256 _amountInMax,
     bytes calldata _flashSwapData
   ) external returns (uint256) {
@@ -103,18 +94,23 @@ contract FixedLiquidationPair is ILiquidationPair {
     lastAuctionAt = uint64(block.timestamp);
     lastAuctionPrice = swapAmountIn;
 
+    uint256 amountOut = source.liquidatableBalanceOf(address(_tokenOut));
+    if (amountOut == 0) {
+      revert("no way jose");
+    }
+
     bytes memory transferTokensOutData = source.transferTokensOut(
       msg.sender,
       _receiver,
       address(_tokenOut),
-      _amountOut
+      amountOut
     );
 
     if (_flashSwapData.length > 0) {
       IFlashSwapCallback(_receiver).flashSwapCallback(
         msg.sender,
         swapAmountIn,
-        _amountOut,
+        amountOut,
         _flashSwapData
       );
     }
@@ -131,4 +127,21 @@ contract FixedLiquidationPair is ILiquidationPair {
   function computeExactAmountIn(uint256) external view returns (uint256) {
     return _computePrice();
   }
+
+  function computeTimeForPrice(uint256 price) external view returns (uint256) {
+      // p2/p1 = t/e => e = t*p1/p2
+      return lastAuctionAt + (targetAuctionPeriod*lastAuctionPrice)/price;
+  }
+
+  function _computePrice() internal view returns (uint192) {
+      uint256 elapsedTime = block.timestamp - lastAuctionAt;
+      if (elapsedTime == 0) {
+          return type(uint192).max;
+      }
+      return uint192((targetAuctionPeriod * lastAuctionPrice) / elapsedTime);
+
+      // p2 = t/e * p1
+      // => 
+  }
+
 }
