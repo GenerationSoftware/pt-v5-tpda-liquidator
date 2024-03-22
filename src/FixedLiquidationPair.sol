@@ -18,6 +18,7 @@ contract FixedLiquidationPair is ILiquidationPair {
     uint256 public immutable minimumAuctionAmount;
     IERC20 internal immutable _tokenIn;
     IERC20 internal immutable _tokenOut;
+    uint256 public immutable smoothingFactor;    
 
     uint64 public lastAuctionAt;
     uint192 public lastAuctionPrice;  
@@ -27,13 +28,16 @@ contract FixedLiquidationPair is ILiquidationPair {
         address __tokenIn,
         address __tokenOut,
         uint256 _targetAuctionPeriod,
-        uint192 _minimumAuctionAmount
+        uint192 _minimumAuctionAmount,
+        uint256 _smoothingFactor
     ) {
         source = _source;
         _tokenIn = IERC20(__tokenIn);
         _tokenOut = IERC20(__tokenOut);
         targetAuctionPeriod = _targetAuctionPeriod;
         minimumAuctionAmount = _minimumAuctionAmount;
+        smoothingFactor = _smoothingFactor;
+        require(smoothingFactor < 1e18, "less tan 1");
 
         lastAuctionAt = uint64(block.timestamp);
         lastAuctionPrice = _minimumAuctionAmount;
@@ -68,7 +72,7 @@ contract FixedLiquidationPair is ILiquidationPair {
    * @return The maximum amount of tokens that can be swapped out.
    */
   function maxAmountOut() external returns (uint256) {  
-    return source.liquidatableBalanceOf(address(_tokenOut));
+    return _availableBalance();
   }
 
   /**
@@ -94,7 +98,7 @@ contract FixedLiquidationPair is ILiquidationPair {
     lastAuctionAt = uint64(block.timestamp);
     lastAuctionPrice = swapAmountIn;
 
-    uint256 amountOut = source.liquidatableBalanceOf(address(_tokenOut));
+    uint256 amountOut = _availableBalance();
     if (amountOut == 0) {
       revert("no way jose");
     }
@@ -131,6 +135,10 @@ contract FixedLiquidationPair is ILiquidationPair {
   function computeTimeForPrice(uint256 price) external view returns (uint256) {
       // p2/p1 = t/e => e = t*p1/p2
       return lastAuctionAt + (targetAuctionPeriod*lastAuctionPrice)/price;
+  }
+
+  function _availableBalance() internal returns (uint256) {
+    return ((1e18 - smoothingFactor) * source.liquidatableBalanceOf(address(_tokenOut))) / 1e18;
   }
 
   function _computePrice() internal view returns (uint192) {

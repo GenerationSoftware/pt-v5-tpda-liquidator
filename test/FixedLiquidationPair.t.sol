@@ -36,7 +36,8 @@ contract FixedLiquidationPairTest is Test {
             address(tokenIn),
             address(tokenOut),
             targetAuctionPeriod,
-            minimumAuctionAmount
+            minimumAuctionAmount,
+            0
         );
 
         receiver = makeAddr("receiver");

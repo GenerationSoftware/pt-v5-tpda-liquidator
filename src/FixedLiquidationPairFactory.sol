@@ -23,7 +23,8 @@ contract FixedLiquidationPairFactory {
     address indexed tokenIn,
     address indexed tokenOut,
     uint256 targetAuctionPeriod,
-    uint192 minimumAuctionAmount
+    uint192 minimumAuctionAmount,
+    uint256 smoothingFactor
   );
 
   /* ============ Variables ============ */
@@ -51,14 +52,16 @@ contract FixedLiquidationPairFactory {
     address _tokenIn,
     address _tokenOut,
     uint256 _targetAuctionPeriod,
-    uint192 _minimumAuctionAmount
+    uint192 _minimumAuctionAmount,
+    uint256 _smoothingFactor
   ) external returns (FixedLiquidationPair) {
     FixedLiquidationPair _FixedliquidationPair = new FixedLiquidationPair(
       _source,
       _tokenIn,
       _tokenOut,
       _targetAuctionPeriod,
-      _minimumAuctionAmount
+      _minimumAuctionAmount,
+      _smoothingFactor
     );
 
     allPairs.push(_FixedliquidationPair);
@@ -70,7 +73,8 @@ contract FixedLiquidationPairFactory {
       _tokenIn,
       _tokenOut,
       _targetAuctionPeriod,
-      _minimumAuctionAmount
+      _minimumAuctionAmount,
+      _smoothingFactor
     );
 
     return _FixedliquidationPair;
