@@ -1,66 +1,19 @@
-## Foundry
+# Target Period Dutch Auction Liquidation Pair
 
-**Foundry is a blazing fast, portable and modular toolkit for Ethereum application development written in Rust.**
+The TpdaLiquidationPair is designed to periodically liquidate accrued yield on PoolTogether V5 vaults.  The Target Period Dutch Auction adjusts the price so that an auction occurs every X seconds.
 
-Foundry consists of:
+## How it works
 
--   **Forge**: Ethereum testing framework (like Truffle, Hardhat and DappTools).
--   **Cast**: Swiss army knife for interacting with EVM smart contracts, sending transactions and getting chain data.
--   **Anvil**: Local Ethereum node, akin to Ganache, Hardhat Network.
--   **Chisel**: Fast, utilitarian, and verbose solidity REPL.
+Each auction is for the entire liquidatable balance of tokens. Assuming:
 
-## Documentation
+- $targetTime$ is a constant which is the target auction period
+- $elapsedTime$ is the time that has elapsed since the last auction
+- $previousPrice$ is the last auction price
 
-https://book.getfoundry.sh/
+The current auction price is determined like so:
 
-## Usage
+$$price = {targetTime \over elapsedTime} * previousPrice$$
 
-### Build
+If a sale occurs in 2 days but the target time was 1, then the price will be half. Likewise, if a sale occurs in 1 day but the target was 2, then the price will be doubled.
 
-```shell
-$ forge build
-```
-
-### Test
-
-```shell
-$ forge test
-```
-
-### Format
-
-```shell
-$ forge fmt
-```
-
-### Gas Snapshots
-
-```shell
-$ forge snapshot
-```
-
-### Anvil
-
-```shell
-$ anvil
-```
-
-### Deploy
-
-```shell
-$ forge script script/Counter.s.sol:CounterScript --rpc-url <your_rpc_url> --private-key <your_private_key>
-```
-
-### Cast
-
-```shell
-$ cast <subcommand>
-```
-
-### Help
-
-```shell
-$ forge --help
-$ anvil --help
-$ cast --help
-```
+In this way, the algorithm will adjust the price until it stabilizes at the target time period.
