@@ -5,14 +5,14 @@ import { Test } from "forge-std/Test.sol";
 import { console2 } from "forge-std/console2.sol";
 
 import {
-    FixedLiquidationPair,
+    TpdaLiquidationPair,
     IERC20,
     ILiquidationSource
-} from "../src/FixedLiquidationPair.sol";
+} from "../src/TpdaLiquidationPair.sol";
 
-contract FixedLiquidationPairTest is Test {
+contract TpdaLiquidationPairTest is Test {
 
-    FixedLiquidationPair pair;
+    TpdaLiquidationPair pair;
 
     ILiquidationSource source;
     IERC20 tokenIn;
@@ -31,7 +31,7 @@ contract FixedLiquidationPairTest is Test {
         vm.etch(address(tokenOut), "tokenOut"); // ensure call failures if not mocked
         targetAuctionPeriod = 1 hours;
         minimumAuctionAmount = 0.01e18;
-        pair = new FixedLiquidationPair(
+        pair = new TpdaLiquidationPair(
             source,
             address(tokenIn),
             address(tokenOut),

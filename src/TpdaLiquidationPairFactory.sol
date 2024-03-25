@@ -2,15 +2,15 @@
 
 pragma solidity ^0.8.24;
 
-import { ILiquidationSource, FixedLiquidationPair } from "./FixedLiquidationPair.sol";
+import { ILiquidationSource, TpdaLiquidationPair } from "./TpdaLiquidationPair.sol";
 
-/// @title FixedLiquidationPairFactory
+/// @title TpdaLiquidationPairFactory
 /// @author G9 Software Inc.
-/// @notice Factory contract for deploying FixedLiquidationPair contracts.
-contract FixedLiquidationPairFactory {
+/// @notice Factory contract for deploying TpdaLiquidationPair contracts.
+contract TpdaLiquidationPairFactory {
   /* ============ Events ============ */
 
-  /// @notice Emitted when a new FixedLiquidationPair is created
+  /// @notice Emitted when a new TpdaLiquidationPair is created
   /// @param pair The address of the new pair
   /// @param source The liquidation source that the pair is using
   /// @param tokenIn The input token for the pair
@@ -18,7 +18,7 @@ contract FixedLiquidationPairFactory {
   /// @param targetAuctionPeriod The duration of auctions
   /// @param minimumAuctionAmount The minimum auction size in output tokens
   event PairCreated(
-    FixedLiquidationPair indexed pair,
+    TpdaLiquidationPair indexed pair,
     ILiquidationSource source,
     address indexed tokenIn,
     address indexed tokenOut,
@@ -30,17 +30,17 @@ contract FixedLiquidationPairFactory {
   /* ============ Variables ============ */
 
   /// @notice Tracks an array of all pairs created by this factory
-  FixedLiquidationPair[] public allPairs;
+  TpdaLiquidationPair[] public allPairs;
 
   /* ============ Mappings ============ */
 
   /**
-   * @notice Mapping to verify if a FixedLiquidationPair has been deployed via this factory.
-   * @dev FixedLiquidationPair address => boolean
+   * @notice Mapping to verify if a TpdaLiquidationPair has been deployed via this factory.
+   * @dev TpdaLiquidationPair address => boolean
    */
-  mapping(FixedLiquidationPair => bool) public deployedPairs;
+  mapping(TpdaLiquidationPair => bool) public deployedPairs;
 
-  /// @notice Creates a new FixedLiquidationPair and registers it within the factory
+  /// @notice Creates a new TpdaLiquidationPair and registers it within the factory
   /// @param _source The liquidation source that the pair will use
   /// @param _tokenIn The input token for the pair
   /// @param _tokenOut The output token for the pair
@@ -54,8 +54,8 @@ contract FixedLiquidationPairFactory {
     uint256 _targetAuctionPeriod,
     uint192 _minimumAuctionAmount,
     uint256 _smoothingFactor
-  ) external returns (FixedLiquidationPair) {
-    FixedLiquidationPair _FixedliquidationPair = new FixedLiquidationPair(
+  ) external returns (TpdaLiquidationPair) {
+    TpdaLiquidationPair _liquidationPair = new TpdaLiquidationPair(
       _source,
       _tokenIn,
       _tokenOut,
@@ -64,11 +64,11 @@ contract FixedLiquidationPairFactory {
       _smoothingFactor
     );
 
-    allPairs.push(_FixedliquidationPair);
-    deployedPairs[_FixedliquidationPair] = true;
+    allPairs.push(_liquidationPair);
+    deployedPairs[_liquidationPair] = true;
 
     emit PairCreated(
-      _FixedliquidationPair,
+      _liquidationPair,
       _source,
       _tokenIn,
       _tokenOut,
@@ -77,12 +77,12 @@ contract FixedLiquidationPairFactory {
       _smoothingFactor
     );
 
-    return _FixedliquidationPair;
+    return _liquidationPair;
   }
 
   /**
-   * @notice Total number of FixedLiquidationPair deployed by this factory.
-   * @return Number of FixedLiquidationPair deployed by this factory.
+   * @notice Total number of TpdaLiquidationPair deployed by this factory.
+   * @return Number of TpdaLiquidationPair deployed by this factory.
    */
   function totalPairs() external view returns (uint256) {
     return allPairs.length;

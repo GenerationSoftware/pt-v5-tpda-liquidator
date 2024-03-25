@@ -11,7 +11,7 @@ import { IFlashSwapCallback } from "pt-v5-liquidator-interfaces/IFlashSwapCallba
 /// @param amountIn The actual amount in
 error SwapExceedsMax(uint256 amountInMax, uint256 amountIn);
 
-contract FixedLiquidationPair is ILiquidationPair {
+contract TpdaLiquidationPair is ILiquidationPair {
 
     ILiquidationSource public immutable source;
     uint256 public immutable targetAuctionPeriod;
@@ -147,6 +147,16 @@ contract FixedLiquidationPair is ILiquidationPair {
           return type(uint192).max;
       }
       return uint192((targetAuctionPeriod * lastAuctionPrice) / elapsedTime);
+
+      // newPrice = targetTime/elapsedTime * oldPrice
+      
+      // newPrice/oldPrice = targetTime/elapsedTime
+
+      // (newPrice * elapsedTime) / oldPrice = targetTime
+
+      // (newPrice / oldPrice) * elapsedTime = targetTime
+
+      
 
       // p2 = t/e * p1
       // => 
