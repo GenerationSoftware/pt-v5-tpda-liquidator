@@ -45,14 +45,14 @@ contract TpdaLiquidationPairFactory {
   /// @param _tokenIn The input token for the pair
   /// @param _tokenOut The output token for the pair
   /// @param _targetAuctionPeriod The duration of auctions
-  /// @param _minimumAuctionAmount The minimum auction size in output tokens
+  /// @param _targetAuctionAmount The initial auction price
   /// @return The address of the new pair
   function createPair(
     ILiquidationSource _source,
     address _tokenIn,
     address _tokenOut,
     uint256 _targetAuctionPeriod,
-    uint192 _minimumAuctionAmount,
+    uint192 _targetAuctionAmount,
     uint256 _smoothingFactor
   ) external returns (TpdaLiquidationPair) {
     TpdaLiquidationPair _liquidationPair = new TpdaLiquidationPair(
@@ -60,7 +60,7 @@ contract TpdaLiquidationPairFactory {
       _tokenIn,
       _tokenOut,
       _targetAuctionPeriod,
-      _minimumAuctionAmount,
+      _targetAuctionAmount,
       _smoothingFactor
     );
 
@@ -73,7 +73,7 @@ contract TpdaLiquidationPairFactory {
       _tokenIn,
       _tokenOut,
       _targetAuctionPeriod,
-      _minimumAuctionAmount,
+      _targetAuctionAmount,
       _smoothingFactor
     );
 

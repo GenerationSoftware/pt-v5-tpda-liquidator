@@ -15,7 +15,6 @@ contract TpdaLiquidationPair is ILiquidationPair {
 
     ILiquidationSource public immutable source;
     uint256 public immutable targetAuctionPeriod;
-    uint256 public immutable minimumAuctionAmount;
     IERC20 internal immutable _tokenIn;
     IERC20 internal immutable _tokenOut;
     uint256 public immutable smoothingFactor;    
@@ -28,19 +27,18 @@ contract TpdaLiquidationPair is ILiquidationPair {
         address __tokenIn,
         address __tokenOut,
         uint256 _targetAuctionPeriod,
-        uint192 _minimumAuctionAmount,
+        uint192 _targetAuctionPrice,
         uint256 _smoothingFactor
     ) {
         source = _source;
         _tokenIn = IERC20(__tokenIn);
         _tokenOut = IERC20(__tokenOut);
         targetAuctionPeriod = _targetAuctionPeriod;
-        minimumAuctionAmount = _minimumAuctionAmount;
         smoothingFactor = _smoothingFactor;
         require(smoothingFactor < 1e18, "less tan 1");
 
         lastAuctionAt = uint64(block.timestamp);
-        lastAuctionPrice = _minimumAuctionAmount;
+        lastAuctionPrice = _targetAuctionPrice;
     }
 
   /**
@@ -147,19 +145,6 @@ contract TpdaLiquidationPair is ILiquidationPair {
           return type(uint192).max;
       }
       return uint192((targetAuctionPeriod * lastAuctionPrice) / elapsedTime);
-
-      // newPrice = targetTime/elapsedTime * oldPrice
-      
-      // newPrice/oldPrice = targetTime/elapsedTime
-
-      // (newPrice * elapsedTime) / oldPrice = targetTime
-
-      // (newPrice / oldPrice) * elapsedTime = targetTime
-
-      
-
-      // p2 = t/e * p1
-      // => 
   }
 
 }
