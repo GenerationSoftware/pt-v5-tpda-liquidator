@@ -1,0 +1,55 @@
+name: Tests with 100% Coverage
+
+on: ["push", "pull_request"]
+
+env:
+  FOUNDRY_PROFILE: ci
+
+jobs:
+  forge:
+    environment: RPC
+    strategy:
+      fail-fast: true
+    permissions:
+      pull-requests: write
+    name: Foundry project
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: nightly
+
+      - name: Run Forge build
+        run: |
+          forge --version
+          forge build --sizes
+        id: build
+
+      - name: Run Forge test
+        env:
+          OPTIMISM_SEPOLIA_RPC_URL: ${{ secrets.OPTIMISM_SEPOLIA_RPC_URL }}
+        run: |
+          forge test
+        id: test
+
+      - name: Install lcov
+        uses: hrishikesh-kadam/setup-lcov@v1.0.0
+
+      - name: Run Forge coverage
+        env:
+          OPTIMISM_SEPOLIA_RPC_URL: ${{ secrets.OPTIMISM_SEPOLIA_RPC_URL }}
+        run: |
+          forge coverage --no-match-contract .*ForkTest --report lcov && lcov --remove lcov.info -o lcov.info 'test/*' 'script/*'
+        id: coverage
+
+      - name: Report code coverage
+        uses: zgosalvez/github-actions-report-lcov@v1.5.0
+        with:
+          coverage-files: lcov.info
+          minimum-coverage: 100
+          github-token: ${{ secrets.GITHUB_TOKEN }}

@@ -7,7 +7,10 @@ import { console2 } from "forge-std/console2.sol";
 import {
     TpdaLiquidationPair,
     IERC20,
-    ILiquidationSource
+    ILiquidationSource,
+    IFlashSwapCallback,
+    SwapExceedsMax,
+    ZeroAvailableBalance
 } from "../src/TpdaLiquidationPair.sol";
 
 contract TpdaLiquidationPairTest is Test {
@@ -20,17 +23,22 @@ contract TpdaLiquidationPairTest is Test {
     uint256 targetAuctionPeriod;
     uint192 minimumAuctionAmount;
 
-    address receiver;
+    IFlashSwapCallback receiver;
+    address target;
 
     function setUp() public {
+        target = makeAddr("target");
         source = ILiquidationSource(makeAddr("ILiquidationSource"));
         vm.etch(address(source), "source"); // ensure call failures if not mocked
         tokenIn = IERC20(makeAddr("tokenIn"));
         vm.etch(address(tokenIn), "tokenIn"); // ensure call failures if not mocked
+        vm.mockCall(address(source), abi.encodeWithSelector(source.targetOf.selector, address(tokenIn)), abi.encode(target));
         tokenOut = IERC20(makeAddr("tokenOut"));
         vm.etch(address(tokenOut), "tokenOut"); // ensure call failures if not mocked
         targetAuctionPeriod = 1 hours;
         minimumAuctionAmount = 0.01e18;
+        receiver = IFlashSwapCallback(makeAddr("receiver"));
+        vm.etch(address(receiver), "receiver"); // ensure call failures if not mocked
         pair = new TpdaLiquidationPair(
             source,
             address(tokenIn),
@@ -39,8 +47,29 @@ contract TpdaLiquidationPairTest is Test {
             minimumAuctionAmount,
             0
         );
+    }
 
-        receiver = makeAddr("receiver");
+    function test_constructor() public {
+        assertEq(pair.tokenIn(), address(tokenIn), "tokenIn");
+        assertEq(pair.tokenOut(), address(tokenOut), "token out");
+    }
+
+    function test_target() public {
+        assertEq(pair.target(), target, "target");
+    }
+
+    function test_maxAmountOut() public {
+        mockLiquidatableBalance(1000e18);
+        assertEq(pair.maxAmountOut(), 1000e18, "max amount out");
+    }
+
+    function test_maxPrice() public {
+        assertEq(pair.computeExactAmountIn(1e18), type(uint192).max, "max price");
+    }
+
+    function test_nonZeroPrice() public {
+        vm.warp(1e20 days);
+        assertGt(pair.computeExactAmountIn(0), 0, "non-zero price");
     }
 
     function test_computePrice_twice_as_long() public {
@@ -70,19 +99,43 @@ contract TpdaLiquidationPairTest is Test {
 
         vm.warp(firstTime);
         console2.log("sale price: ", pair.computeExactAmountIn(0));
-        uint price = pair.swapExactAmountOut(receiver, 0, 100e18, "");
+        uint price = pair.swapExactAmountOut(address(receiver), 0, 100e18, "");
 
         vm.warp(firstTime + targetAuctionPeriod/4);
         console2.log("secnd swap price: ", pair.computeExactAmountIn(0));
-        pair.swapExactAmountOut(receiver, 0, 100e18, "");
+        pair.swapExactAmountOut(address(receiver), 0, 100e18, "");
 
         vm.warp(firstTime + targetAuctionPeriod);
         console2.log("third swap price: ", pair.computeExactAmountIn(0));
-        pair.swapExactAmountOut(receiver, 0, 100e18, ""); // at target, so no change
+        pair.swapExactAmountOut(address(receiver), 0, 100e18, ""); // at target, so no change
+    }
+
+    function test_swapExactAmountOut_flashSwapCallback() public {
+        mockTransferTokensOut(1234e18);
+        vm.warp(block.timestamp + targetAuctionPeriod);
+        uint price = pair.computeExactAmountIn(0);
+        vm.mockCall(address(receiver), abi.encodeWithSelector(receiver.flashSwapCallback.selector, address(this), price, 1234e18, "hello"), abi.encode());
+        pair.swapExactAmountOut(address(receiver), 0, price, "hello");
+    }
+
+    function test_swapExactAmountOut_SwapExceedsMax() public {
+        vm.expectRevert(abi.encodeWithSelector(SwapExceedsMax.selector, 1e18, type(uint192).max));
+        pair.swapExactAmountOut(address(receiver), 0, 1e18, "");
+    }
+
+    function test_swapExactAmountOut_ZeroAvailableBalance() public {
+        vm.warp(block.timestamp + targetAuctionPeriod);
+        mockLiquidatableBalance(0);
+        vm.expectRevert(abi.encodeWithSelector(ZeroAvailableBalance.selector));
+        pair.swapExactAmountOut(address(receiver), 0, 1000e18, "");
+    }
+
+    function mockLiquidatableBalance(uint256 balance) internal {
+        vm.mockCall(address(source), abi.encodeWithSelector(source.liquidatableBalanceOf.selector, address(tokenOut)), abi.encode(balance));
     }
 
     function mockTransferTokensOut(uint256 balance) internal {
-        vm.mockCall(address(source), abi.encodeWithSelector(source.liquidatableBalanceOf.selector, address(tokenOut)), abi.encode(balance));
+        mockLiquidatableBalance(balance);
         vm.mockCall(address(source), abi.encodeWithSelector(source.transferTokensOut.selector, address(this), receiver, address(tokenOut), balance), abi.encode(""));
     }
 
