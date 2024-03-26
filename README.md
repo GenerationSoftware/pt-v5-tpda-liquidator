@@ -21,7 +21,7 @@ The current auction price is determined like so:
 
 $$price = {targetTime \over elapsedTime} * previousPrice$$
 
-If a sale occurs in 2 days but the target time was 1, then the price will be half. Likewise, if a sale occurs in 1 day but the target was 2, then the price will be doubled.
+If a sale occurs in 2 days but the target time was 1 day, then the price will be half. Likewise, if a sale occurs in 1 day but the target was 2 days, then the price will be doubled.
 
 In this way, the algorithm will adjust the price until it stabilizes at the target time period.
 
@@ -37,4 +37,4 @@ The TPDA LP also takes a "smoothing" parameter during construction. Smoothing is
 
 $$auctionTokens = (1 - smoothing) * availableBalance$$
 
-For example, if smoothing = 0.9 and there are 100 tokens available to auction, then only 10 will be made available. Each subsequent auction will be for 10% of the remaining tokens.
+For example, if smoothing = 0.9 and there are 100 tokens available to auction, then only 10 will be auctioned. Each subsequent auction will be for 10% of the remaining tokens.
