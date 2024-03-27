@@ -1,6 +1,6 @@
 # Target Period Dutch Auction Liquidation Pair
 
-[![Code Coverage](https://github.com/generationsoftware/pt-v5-tpda-liquidator/actions/workflows/coverage.yml/badge.svg)](https://github.com/generationsoftware/pt-v5-tpda-liquidator/actions/workflows/coverage.yml)
+[![Code Coverage](https://github.com/generationsoftware/pt-v5-tpda-liquidator/actions/workflows/coverage.yml/badge.svg)](https://github.com/generationsoftware/pt-v5-tpda-liquidator/actions/workflows/coverage.yml?)
 ![MIT license](https://img.shields.io/badge/license-MIT-blue)
 
 The TpdaLiquidationPair is designed to periodically liquidate accrued yield on PoolTogether V5 vaults.  The Target Period Dutch Auction adjusts the price so that an auction occurs every X seconds.
