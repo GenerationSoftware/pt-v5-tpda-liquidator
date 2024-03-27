@@ -10,10 +10,21 @@ import {
     ILiquidationSource,
     IFlashSwapCallback,
     SwapExceedsMax,
-    ZeroAvailableBalance
+    ZeroAvailableBalance,
+    SmoothingGteOne,
+    ReceiverIsZero
 } from "../src/TpdaLiquidationPair.sol";
 
 contract TpdaLiquidationPairTest is Test {
+    
+    event SwappedExactAmountOut(
+        address indexed sender,
+        address indexed receiver,
+        uint256 amountOut,
+        uint256 amountInMax,
+        uint256 amountIn,
+        bytes flashSwapData
+    );
 
     TpdaLiquidationPair pair;
 
@@ -52,6 +63,18 @@ contract TpdaLiquidationPairTest is Test {
     function test_constructor() public {
         assertEq(pair.tokenIn(), address(tokenIn), "tokenIn");
         assertEq(pair.tokenOut(), address(tokenOut), "token out");
+    }
+
+    function test_constructor_SmoothingGteOne() public{ 
+        vm.expectRevert(abi.encodeWithSelector(SmoothingGteOne.selector));
+        new TpdaLiquidationPair(
+            source,
+            address(tokenIn),
+            address(tokenOut),
+            targetAuctionPeriod,
+            minimumAuctionAmount,
+            1e18
+        );
     }
 
     function test_target() public {
@@ -98,16 +121,27 @@ contract TpdaLiquidationPairTest is Test {
         uint firstTime = block.timestamp + 4 weeks;
 
         vm.warp(firstTime);
-        console2.log("sale price: ", pair.computeExactAmountIn(0));
+        vm.expectEmit(true, true, true, true);
+        emit SwappedExactAmountOut(
+            address(this),
+            address(receiver),
+            1234e18,
+            100e18,
+            pair.computeExactAmountIn(0),
+            ""
+        );
         uint price = pair.swapExactAmountOut(address(receiver), 0, 100e18, "");
 
         vm.warp(firstTime + targetAuctionPeriod/4);
-        console2.log("secnd swap price: ", pair.computeExactAmountIn(0));
         pair.swapExactAmountOut(address(receiver), 0, 100e18, "");
 
         vm.warp(firstTime + targetAuctionPeriod);
-        console2.log("third swap price: ", pair.computeExactAmountIn(0));
         pair.swapExactAmountOut(address(receiver), 0, 100e18, ""); // at target, so no change
+    }
+
+    function test_swapExactAmountOut_ReceiverIsZero() public {
+        vm.expectRevert(abi.encodeWithSelector(ReceiverIsZero.selector));
+        pair.swapExactAmountOut(address(0), 0, 1110e18, "");
     }
 
     function test_swapExactAmountOut_flashSwapCallback() public {

@@ -14,9 +14,30 @@ error SwapExceedsMax(uint256 amountInMax, uint256 amountIn);
 /// @notice Thrown when there is zero available balance to swap
 error ZeroAvailableBalance();
 
+/// @notice Thrown when the receiver of the swap is the zero address
+error ReceiverIsZero();
+
+/// @notice Thrown when the smoothing parameter is 1 or greater
+error SmoothingGteOne();
+
 contract TpdaLiquidationPair is ILiquidationPair {
 
     uint192 internal constant MIN_PRICE = 100;
+
+    /// @notice Emitted when a swap is made
+    /// @param sender The sender of the swap
+    /// @param receiver The receiver of the swap
+    /// @param amountOut The amount of tokens out
+    /// @param amountInMax The maximum amount of tokens in
+    /// @param amountIn The actual amount of tokens in
+    event SwappedExactAmountOut(
+        address indexed sender,
+        address indexed receiver,
+        uint256 amountOut,
+        uint256 amountInMax,
+        uint256 amountIn,
+        bytes flashSwapData
+    );
 
     ILiquidationSource public immutable source;
     uint256 public immutable targetAuctionPeriod;
@@ -40,7 +61,9 @@ contract TpdaLiquidationPair is ILiquidationPair {
         _tokenOut = IERC20(__tokenOut);
         targetAuctionPeriod = _targetAuctionPeriod;
         smoothingFactor = _smoothingFactor;
-        require(smoothingFactor < 1e18, "less tan 1");
+        if (smoothingFactor >= 1e18) {
+            revert SmoothingGteOne();
+        }
 
         lastAuctionAt = uint64(block.timestamp);
         lastAuctionPrice = _targetAuctionPrice;
@@ -92,6 +115,10 @@ contract TpdaLiquidationPair is ILiquidationPair {
         uint256 _amountInMax,
         bytes calldata _flashSwapData
     ) external returns (uint256) {
+        if (_receiver == address(0)) {
+            revert ReceiverIsZero();
+        }
+
         uint192 swapAmountIn = _computePrice();
 
         if (swapAmountIn > _amountInMax) {
@@ -123,6 +150,8 @@ contract TpdaLiquidationPair is ILiquidationPair {
         }
 
         source.verifyTokensIn(address(_tokenIn), swapAmountIn, transferTokensOutData);
+
+        emit SwappedExactAmountOut(msg.sender, _receiver, amountOut, _amountInMax, swapAmountIn, _flashSwapData);
 
         return swapAmountIn;
     }
