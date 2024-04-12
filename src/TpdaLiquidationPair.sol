@@ -12,7 +12,7 @@ import { IFlashSwapCallback } from "pt-v5-liquidator-interfaces/IFlashSwapCallba
 error SwapExceedsMax(uint256 amountInMax, uint256 amountIn);
 
 /// @notice Thrown when there is zero available balance to swap
-error ZeroAvailableBalance();
+error InsufficientBalance();
 
 /// @notice Thrown when the receiver of the swap is the zero address
 error ReceiverIsZero();
@@ -115,10 +115,22 @@ contract TpdaLiquidationPair is ILiquidationPair {
         return _availableBalance();
     }
 
+<<<<<<< HEAD
     /// @inheritdoc ILiquidationPair
+=======
+    /**
+    * @notice Swaps the given amount of tokens out and ensures the amount of tokens in doesn't exceed the given maximum.
+    * @dev The amount of tokens being swapped in must be sent to the target before calling this function.
+    * @param _receiver The address to send the tokens to.
+    * @param _amountOut The amount of tokens to buy.
+    * @param _amountInMax The maximum amount of tokens to send in.
+    * @param _flashSwapData If non-zero, the _receiver is called with this data prior to
+    * @return The amount of tokens sent in.
+    */
+>>>>>>> 55722ac (Used the amountOut param)
     function swapExactAmountOut(
         address _receiver,
-        uint256 /* _amountOut */,
+        uint256 _amountOut,
         uint256 _amountInMax,
         bytes calldata _flashSwapData
     ) external returns (uint256) {
@@ -135,30 +147,30 @@ contract TpdaLiquidationPair is ILiquidationPair {
         lastAuctionAt = uint64(block.timestamp);
         lastAuctionPrice = swapAmountIn;
 
-        uint256 amountOut = _availableBalance();
-        if (amountOut == 0) {
-            revert ZeroAvailableBalance();
+        uint256 availableOut = _availableBalance();
+        if (_amountOut > availableOut) {
+            revert InsufficientBalance();
         }
 
         bytes memory transferTokensOutData = source.transferTokensOut(
             msg.sender,
             _receiver,
             address(_tokenOut),
-            amountOut
+            _amountOut
         );
 
         if (_flashSwapData.length > 0) {
             IFlashSwapCallback(_receiver).flashSwapCallback(
-            msg.sender,
-            swapAmountIn,
-            amountOut,
-            _flashSwapData
+                msg.sender,
+                swapAmountIn,
+                _amountOut,
+                _flashSwapData
             );
         }
 
         source.verifyTokensIn(address(_tokenIn), swapAmountIn, transferTokensOutData);
 
-        emit SwappedExactAmountOut(msg.sender, _receiver, amountOut, _amountInMax, swapAmountIn, _flashSwapData);
+        emit SwappedExactAmountOut(msg.sender, _receiver, _amountOut, _amountInMax, swapAmountIn, _flashSwapData);
 
         return swapAmountIn;
     }
