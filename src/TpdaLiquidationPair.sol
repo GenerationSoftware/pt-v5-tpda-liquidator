@@ -20,7 +20,7 @@ error ReceiverIsZero();
 /// @notice Thrown when the smoothing parameter is 1 or greater
 error SmoothingGteOne();
 
-/// @notice The minimum auction price. This ensures the auction cannot get bricked to zero.
+// The minimum auction price. This ensures the auction cannot get bricked to zero.
 uint192 constant MIN_PRICE = 100;
 
 /// @title Target Period Dutch Auction Liquidation Pair
