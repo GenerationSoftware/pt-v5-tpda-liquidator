@@ -94,8 +94,7 @@ contract TpdaLiquidationPair is ILiquidationPair {
         lastAuctionPrice = _targetAuctionPrice;
     }
 
-    /// @notice Returns the token that is used to pay for auctions.
-    /// @return address of the token coming in
+    /// @inheritdoc ILiquidationPair
     function tokenIn() external view returns (address) {
         return address(_tokenIn);
     }
