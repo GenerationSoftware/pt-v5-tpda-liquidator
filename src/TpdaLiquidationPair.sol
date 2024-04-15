@@ -12,7 +12,9 @@ import { IFlashSwapCallback } from "pt-v5-liquidator-interfaces/IFlashSwapCallba
 error SwapExceedsMax(uint256 amountInMax, uint256 amountIn);
 
 /// @notice Thrown when the amount out requested is greater than the available balance
-error InsufficientBalance();
+/// @param requested The amount requested to swap
+/// @param available The amount available to swap
+error InsufficientBalance(uint256 requested, uint256 available);
 
 /// @notice Thrown when the receiver of the swap is the zero address
 error ReceiverIsZero();
@@ -149,7 +151,7 @@ contract TpdaLiquidationPair is ILiquidationPair {
 
         uint256 availableOut = _availableBalance();
         if (_amountOut > availableOut) {
-            revert InsufficientBalance();
+            revert InsufficientBalance(_amountOut, availableOut);
         }
 
         bytes memory transferTokensOutData = source.transferTokensOut(

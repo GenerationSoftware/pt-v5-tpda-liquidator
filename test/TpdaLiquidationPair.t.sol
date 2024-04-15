@@ -160,7 +160,7 @@ contract TpdaLiquidationPairTest is Test {
     function test_swapExactAmountOut_InsufficientBalance() public {
         vm.warp(block.timestamp + targetAuctionPeriod);
         mockLiquidatableBalance(0);
-        vm.expectRevert(abi.encodeWithSelector(InsufficientBalance.selector));
+        vm.expectRevert(abi.encodeWithSelector(InsufficientBalance.selector, 1234e18, 0));
         pair.swapExactAmountOut(address(receiver), 1234e18, 1000e18, "");
     }
 
