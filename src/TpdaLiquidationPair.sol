@@ -117,19 +117,7 @@ contract TpdaLiquidationPair is ILiquidationPair {
         return _availableBalance();
     }
 
-<<<<<<< HEAD
     /// @inheritdoc ILiquidationPair
-=======
-    /**
-    * @notice Swaps the given amount of tokens out and ensures the amount of tokens in doesn't exceed the given maximum.
-    * @dev The amount of tokens being swapped in must be sent to the target before calling this function.
-    * @param _receiver The address to send the tokens to.
-    * @param _amountOut The amount of tokens to buy.
-    * @param _amountInMax The maximum amount of tokens to send in.
-    * @param _flashSwapData If non-zero, the _receiver is called with this data prior to
-    * @return The amount of tokens sent in.
-    */
->>>>>>> 55722ac (Used the amountOut param)
     function swapExactAmountOut(
         address _receiver,
         uint256 _amountOut,
