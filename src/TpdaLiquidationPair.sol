@@ -110,8 +110,7 @@ contract TpdaLiquidationPair is ILiquidationPair {
         return source.targetOf(address(_tokenIn));
     }
 
-    /// @notice Gets the maximum amount of tokens that can be swapped out from the source.
-    /// @return The maximum amount of tokens that can be swapped out.
+    /// @inheritdoc ILiquidationPair
     function maxAmountOut() external returns (uint256) {  
         return _availableBalance();
     }
