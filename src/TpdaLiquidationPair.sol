@@ -11,7 +11,7 @@ import { IFlashSwapCallback } from "pt-v5-liquidator-interfaces/IFlashSwapCallba
 /// @param amountIn The actual amount in
 error SwapExceedsMax(uint256 amountInMax, uint256 amountIn);
 
-/// @notice Thrown when there is zero available balance to swap
+/// @notice Thrown when the amount out requested is greater than the available balance
 error InsufficientBalance();
 
 /// @notice Thrown when the receiver of the swap is the zero address
