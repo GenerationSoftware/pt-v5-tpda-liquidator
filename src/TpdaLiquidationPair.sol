@@ -105,8 +105,7 @@ contract TpdaLiquidationPair is ILiquidationPair {
         return address(_tokenOut);
     }
 
-    /// @notice Get the address that will receive `tokenIn`.
-    /// @return Address of the target
+    /// @inheritdoc ILiquidationPair
     function target() external returns (address) {
         return source.targetOf(address(_tokenIn));
     }
