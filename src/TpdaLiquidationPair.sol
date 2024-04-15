@@ -36,6 +36,7 @@ contract TpdaLiquidationPair is ILiquidationPair {
     /// @param amountOut The amount of tokens out
     /// @param amountInMax The maximum amount of tokens in
     /// @param amountIn The actual amount of tokens in
+    /// @param flashSwapData The data used for the flash swap
     event SwappedExactAmountOut(
         address indexed sender,
         address indexed receiver,
