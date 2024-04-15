@@ -168,8 +168,7 @@ contract TpdaLiquidationPair is ILiquidationPair {
         return swapAmountIn;
     }
 
-    /// @notice Computes the exact amount of tokens to send in for the given amount of tokens to receive out.
-    /// @return The amount of tokens to send in.
+    /// @inheritdoc ILiquidationPair
     function computeExactAmountIn(uint256) external view returns (uint256) {
         return _computePrice();
     }
