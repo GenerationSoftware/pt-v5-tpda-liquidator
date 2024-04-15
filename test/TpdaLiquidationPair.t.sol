@@ -10,7 +10,7 @@ import {
     ILiquidationSource,
     IFlashSwapCallback,
     SwapExceedsMax,
-    ZeroAvailableBalance,
+    InsufficientBalance,
     SmoothingGteOne,
     ReceiverIsZero
 } from "../src/TpdaLiquidationPair.sol";
@@ -130,13 +130,13 @@ contract TpdaLiquidationPairTest is Test {
             pair.computeExactAmountIn(0),
             ""
         );
-        pair.swapExactAmountOut(address(receiver), 0, 100e18, "");
+        pair.swapExactAmountOut(address(receiver), 1234e18, 100e18, "");
 
         vm.warp(firstTime + targetAuctionPeriod/4);
-        pair.swapExactAmountOut(address(receiver), 0, 100e18, "");
+        pair.swapExactAmountOut(address(receiver), 1234e18, 100e18, "");
 
         vm.warp(firstTime + targetAuctionPeriod);
-        pair.swapExactAmountOut(address(receiver), 0, 100e18, ""); // at target, so no change
+        pair.swapExactAmountOut(address(receiver), 1234e18, 100e18, ""); // at target, so no change
     }
 
     function test_swapExactAmountOut_ReceiverIsZero() public {
@@ -149,7 +149,7 @@ contract TpdaLiquidationPairTest is Test {
         vm.warp(block.timestamp + targetAuctionPeriod);
         uint price = pair.computeExactAmountIn(0);
         vm.mockCall(address(receiver), abi.encodeWithSelector(receiver.flashSwapCallback.selector, address(this), price, 1234e18, "hello"), abi.encode());
-        pair.swapExactAmountOut(address(receiver), 0, price, "hello");
+        pair.swapExactAmountOut(address(receiver), 1234e18, price, "hello");
     }
 
     function test_swapExactAmountOut_SwapExceedsMax() public {
@@ -157,11 +157,11 @@ contract TpdaLiquidationPairTest is Test {
         pair.swapExactAmountOut(address(receiver), 0, 1e18, "");
     }
 
-    function test_swapExactAmountOut_ZeroAvailableBalance() public {
+    function test_swapExactAmountOut_InsufficientBalance() public {
         vm.warp(block.timestamp + targetAuctionPeriod);
         mockLiquidatableBalance(0);
-        vm.expectRevert(abi.encodeWithSelector(ZeroAvailableBalance.selector));
-        pair.swapExactAmountOut(address(receiver), 0, 1000e18, "");
+        vm.expectRevert(abi.encodeWithSelector(InsufficientBalance.selector, 1234e18, 0));
+        pair.swapExactAmountOut(address(receiver), 1234e18, 1000e18, "");
     }
 
     function mockLiquidatableBalance(uint256 balance) internal {

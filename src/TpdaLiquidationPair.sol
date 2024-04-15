@@ -11,8 +11,10 @@ import { IFlashSwapCallback } from "pt-v5-liquidator-interfaces/IFlashSwapCallba
 /// @param amountIn The actual amount in
 error SwapExceedsMax(uint256 amountInMax, uint256 amountIn);
 
-/// @notice Thrown when there is zero available balance to swap
-error ZeroAvailableBalance();
+/// @notice Thrown when the amount out requested is greater than the available balance
+/// @param requested The amount requested to swap
+/// @param available The amount available to swap
+error InsufficientBalance(uint256 requested, uint256 available);
 
 /// @notice Thrown when the receiver of the swap is the zero address
 error ReceiverIsZero();
@@ -118,7 +120,7 @@ contract TpdaLiquidationPair is ILiquidationPair {
     /// @inheritdoc ILiquidationPair
     function swapExactAmountOut(
         address _receiver,
-        uint256 /* _amountOut */,
+        uint256 _amountOut,
         uint256 _amountInMax,
         bytes calldata _flashSwapData
     ) external returns (uint256) {
@@ -135,30 +137,30 @@ contract TpdaLiquidationPair is ILiquidationPair {
         lastAuctionAt = uint64(block.timestamp);
         lastAuctionPrice = swapAmountIn;
 
-        uint256 amountOut = _availableBalance();
-        if (amountOut == 0) {
-            revert ZeroAvailableBalance();
+        uint256 availableOut = _availableBalance();
+        if (_amountOut > availableOut) {
+            revert InsufficientBalance(_amountOut, availableOut);
         }
 
         bytes memory transferTokensOutData = source.transferTokensOut(
             msg.sender,
             _receiver,
             address(_tokenOut),
-            amountOut
+            _amountOut
         );
 
         if (_flashSwapData.length > 0) {
             IFlashSwapCallback(_receiver).flashSwapCallback(
-            msg.sender,
-            swapAmountIn,
-            amountOut,
-            _flashSwapData
+                msg.sender,
+                swapAmountIn,
+                _amountOut,
+                _flashSwapData
             );
         }
 
         source.verifyTokensIn(address(_tokenIn), swapAmountIn, transferTokensOutData);
 
-        emit SwappedExactAmountOut(msg.sender, _receiver, amountOut, _amountInMax, swapAmountIn, _flashSwapData);
+        emit SwappedExactAmountOut(msg.sender, _receiver, _amountOut, _amountInMax, swapAmountIn, _flashSwapData);
 
         return swapAmountIn;
     }
