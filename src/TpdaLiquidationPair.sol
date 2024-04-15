@@ -99,8 +99,7 @@ contract TpdaLiquidationPair is ILiquidationPair {
         return address(_tokenIn);
     }
 
-    /// @notice Returns the token that is being auctioned.
-    /// @return address of the token coming out
+    /// @inheritdoc ILiquidationPair
     function tokenOut() external view returns (address) {
         return address(_tokenOut);
     }
