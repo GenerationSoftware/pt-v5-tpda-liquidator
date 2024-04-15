@@ -29,7 +29,7 @@ In this way, the algorithm will adjust the price until it stabilizes at the targ
 
 The TPDA Liquidation Pair offers smoothing, so that spikes in yield do not disrupt the auction price.
 
-Some yield sources may accrue in bursts; this means there would be periods of time where there is no yield, then large bursts of yield. This would not work well, as the algorithm needs consistent yield.
+Some yield sources may accrue in bursts; this means there would be periods of time where there is no yield, then large bursts of yield. This is not ideal, as the algorithm works best with consistent auction sizes.
 
 For example, the Prize Pool in PoolTogether V5 will accrue reserve when the draw occurs. For a daily draw, this means that the reserve increases once per day.
 
