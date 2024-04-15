@@ -130,7 +130,7 @@ contract TpdaLiquidationPairTest is Test {
             pair.computeExactAmountIn(0),
             ""
         );
-        uint price = pair.swapExactAmountOut(address(receiver), 0, 100e18, "");
+        pair.swapExactAmountOut(address(receiver), 0, 100e18, "");
 
         vm.warp(firstTime + targetAuctionPeriod/4);
         pair.swapExactAmountOut(address(receiver), 0, 100e18, "");

@@ -20,9 +20,15 @@ error ReceiverIsZero();
 /// @notice Thrown when the smoothing parameter is 1 or greater
 error SmoothingGteOne();
 
-contract TpdaLiquidationPair is ILiquidationPair {
+// The minimum auction price. This ensures the auction cannot get bricked to zero.
+uint192 constant MIN_PRICE = 100;
 
-    uint192 internal constant MIN_PRICE = 100;
+/// @title Target Period Dutch Auction Liquidation Pair
+/// @author G9 Software Inc.
+/// @notice This contract sells one token for another at a target time interval. The pricing algorithm is designed
+/// such that the price of the auction is inversely proportional to the time since the last auction.
+/// auctionPrice = (targetAuctionPeriod / elapsedTimeSinceLastAuction) * lastAuctionPrice
+contract TpdaLiquidationPair is ILiquidationPair {
 
     /// @notice Emitted when a swap is made
     /// @param sender The sender of the swap
@@ -30,6 +36,7 @@ contract TpdaLiquidationPair is ILiquidationPair {
     /// @param amountOut The amount of tokens out
     /// @param amountInMax The maximum amount of tokens in
     /// @param amountIn The actual amount of tokens in
+    /// @param flashSwapData The data used for the flash swap
     event SwappedExactAmountOut(
         address indexed sender,
         address indexed receiver,
@@ -39,15 +46,34 @@ contract TpdaLiquidationPair is ILiquidationPair {
         bytes flashSwapData
     );
 
+    /// @notice The liquidation source
     ILiquidationSource public immutable source;
+
+    /// @notice The target time interval between auctions
     uint256 public immutable targetAuctionPeriod;
+
+    /// @notice The token that is being purchased
     IERC20 internal immutable _tokenIn;
+
+    /// @notice The token that is being sold
     IERC20 internal immutable _tokenOut;
+
+    /// @notice The degree of smoothing to apply to the available token balance
     uint256 public immutable smoothingFactor;    
 
+    /// @notice The time at which the last auction occurred
     uint64 public lastAuctionAt;
-    uint192 public lastAuctionPrice;  
 
+    /// @notice The price of the last auction
+    uint192 public lastAuctionPrice;
+
+    /// @notice Constructors a new TpdaLiquidationPair
+    /// @param _source The liquidation source
+    /// @param __tokenIn The token that is being purchased
+    /// @param __tokenOut The token that is being sold
+    /// @param _targetAuctionPeriod The target time interval between auctions
+    /// @param _targetAuctionPrice The target price of the auction
+    /// @param _smoothingFactor The degree of smoothing to apply to the available token balance
     constructor (
         ILiquidationSource _source,
         address __tokenIn,
@@ -69,46 +95,27 @@ contract TpdaLiquidationPair is ILiquidationPair {
         lastAuctionPrice = _targetAuctionPrice;
     }
 
-    /**
-    * @notice Returns the token that is used to pay for auctions.
-    * @return address of the token coming in
-    */
+    /// @inheritdoc ILiquidationPair
     function tokenIn() external view returns (address) {
         return address(_tokenIn);
     }
 
-    /**
-    * @notice Returns the token that is being auctioned.
-    * @return address of the token coming out
-    */
+    /// @inheritdoc ILiquidationPair
     function tokenOut() external view returns (address) {
         return address(_tokenOut);
     }
 
-    /**
-    * @notice Get the address that will receive `tokenIn`.
-    * @return Address of the target
-    */
+    /// @inheritdoc ILiquidationPair
     function target() external returns (address) {
         return source.targetOf(address(_tokenIn));
     }
 
-    /**
-    * @notice Gets the maximum amount of tokens that can be swapped out from the source.
-    * @return The maximum amount of tokens that can be swapped out.
-    */
+    /// @inheritdoc ILiquidationPair
     function maxAmountOut() external returns (uint256) {  
         return _availableBalance();
     }
 
-    /**
-    * @notice Swaps the given amount of tokens out and ensures the amount of tokens in doesn't exceed the given maximum.
-    * @dev The amount of tokens being swapped in must be sent to the target before calling this function.
-    * @param _receiver The address to send the tokens to.
-    * @param _amountInMax The maximum amount of tokens to send in.
-    * @param _flashSwapData If non-zero, the _receiver is called with this data prior to
-    * @return The amount of tokens sent in.
-    */
+    /// @inheritdoc ILiquidationPair
     function swapExactAmountOut(
         address _receiver,
         uint256 /* _amountOut */,
@@ -156,23 +163,27 @@ contract TpdaLiquidationPair is ILiquidationPair {
         return swapAmountIn;
     }
 
-    /**
-    * @notice Computes the exact amount of tokens to send in for the given amount of tokens to receive out.
-    * @return The amount of tokens to send in.
-    */
+    /// @inheritdoc ILiquidationPair
     function computeExactAmountIn(uint256) external view returns (uint256) {
         return _computePrice();
     }
 
+    /// @notice Computes the time at which the given auction price will occur
+    /// @param price The price of the auction
+    /// @return The elapsed time since the last auction at which the price will occur
     function computeTimeForPrice(uint256 price) external view returns (uint256) {
     // p2/p1 = t/e => e = t*p1/p2
         return lastAuctionAt + (targetAuctionPeriod*lastAuctionPrice)/price;
     }
 
+    /// @notice Computes the available balance of the tokens to be sold
+    /// @return The available balance of the tokens
     function _availableBalance() internal returns (uint256) {
         return ((1e18 - smoothingFactor) * source.liquidatableBalanceOf(address(_tokenOut))) / 1e18;
     }
 
+    /// @notice Computes the current auction price
+    /// @return The current auction price
     function _computePrice() internal view returns (uint192) {
         uint256 elapsedTime = block.timestamp - lastAuctionAt;
         if (elapsedTime == 0) {
