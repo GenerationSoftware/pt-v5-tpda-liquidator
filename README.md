@@ -33,7 +33,7 @@ Some yield sources may accrue in bursts; this means there would be periods of ti
 
 For example, the Prize Pool in PoolTogether V5 will accrue reserve when the draw occurs. For a daily draw, this means that the reserve increases once per day.
 
-The TPDA LP also takes a "smoothing" parameter during construction. Smoothing is applied as a multiplier of the currently available balance.
+The TPDA Liquidation Pair also takes a "smoothing" parameter during construction. Smoothing is applied as a multiplier of the currently available balance.
 
 $$auctionTokens = (1 - smoothing) * availableBalance$$
 
