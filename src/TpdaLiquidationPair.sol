@@ -71,10 +71,10 @@ contract TpdaLiquidationPair is ILiquidationPair {
 
     /// @notice Constructors a new TpdaLiquidationPair
     /// @param _source The liquidation source
-    /// @param __tokenIn The token that is being purchased
-    /// @param __tokenOut The token that is being sold
+    /// @param __tokenIn The token that is being purchased by the source
+    /// @param __tokenOut The token that is being sold by the source
     /// @param _targetAuctionPeriod The target time interval between auctions
-    /// @param _targetAuctionPrice The target price of the auction
+    /// @param _targetAuctionPrice The first target price of the auction
     /// @param _smoothingFactor The degree of smoothing to apply to the available token balance
     constructor (
         ILiquidationSource _source,
@@ -84,14 +84,15 @@ contract TpdaLiquidationPair is ILiquidationPair {
         uint192 _targetAuctionPrice,
         uint256 _smoothingFactor
     ) {
+        if (_smoothingFactor >= 1e18) {
+            revert SmoothingGteOne();
+        }
+
         source = _source;
         _tokenIn = IERC20(__tokenIn);
         _tokenOut = IERC20(__tokenOut);
         targetAuctionPeriod = _targetAuctionPeriod;
         smoothingFactor = _smoothingFactor;
-        if (smoothingFactor >= 1e18) {
-            revert SmoothingGteOne();
-        }
 
         lastAuctionAt = uint64(block.timestamp);
         lastAuctionPrice = _targetAuctionPrice;
@@ -172,10 +173,10 @@ contract TpdaLiquidationPair is ILiquidationPair {
 
     /// @notice Computes the time at which the given auction price will occur
     /// @param price The price of the auction
-    /// @return The elapsed time since the last auction at which the price will occur
+    /// @return The timestamp at which the given price will occur
     function computeTimeForPrice(uint256 price) external view returns (uint256) {
-    // p2/p1 = t/e => e = t*p1/p2
-        return lastAuctionAt + (targetAuctionPeriod*lastAuctionPrice)/price;
+        // p2/p1 = t/e => e = (t*p1)/p2
+        return lastAuctionAt + (targetAuctionPeriod * lastAuctionPrice) / price;
     }
 
     /// @notice Computes the available balance of the tokens to be sold

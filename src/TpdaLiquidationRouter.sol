@@ -24,119 +24,120 @@ error InvalidSender(address sender);
 /// @author G9 Software Inc.
 /// @notice Serves as the user-facing swapping interface for Liquidation Pairs.
 contract TpdaLiquidationRouter is IFlashSwapCallback {
-  using SafeERC20 for IERC20;
+    using SafeERC20 for IERC20;
 
-  /* ============ Events ============ */
+    /* ============ Events ============ */
 
-  /// @notice Emitted when the router is created
-  event LiquidationRouterCreated(TpdaLiquidationPairFactory indexed liquidationPairFactory);
+    /// @notice Emitted when the router is created
+    event LiquidationRouterCreated(TpdaLiquidationPairFactory indexed liquidationPairFactory);
 
-  /// @notice Emitted after a swap occurs
-  /// @param liquidationPair The pair that was swapped against
-  /// @param sender The address that initiated the swap
-  /// @param receiver The address that received the output tokens
-  /// @param amountOut The amount of output tokens received
-  /// @param amountInMax The maximum amount of input tokens that could have been used
-  /// @param amountIn The amount of input tokens that were actually used
-  event SwappedExactAmountOut(
-    TpdaLiquidationPair indexed liquidationPair,
-    address indexed sender,
-    address indexed receiver,
-    uint256 amountOut,
-    uint256 amountInMax,
-    uint256 amountIn,
-    uint256 deadline
-  );
-
-  /* ============ Variables ============ */
-
-  /// @notice The TpdaLiquidationPairFactory that this router uses.
-  /// @dev TpdaLiquidationPairs will be checked to ensure they were created by the factory
-  TpdaLiquidationPairFactory internal immutable _liquidationPairFactory;
-
-  /// @notice Constructs a new LiquidationRouter
-  /// @param liquidationPairFactory_ The factory that pairs will be verified to have been created by
-  constructor(TpdaLiquidationPairFactory liquidationPairFactory_) {
-    if (address(liquidationPairFactory_) == address(0)) {
-      revert UndefinedTpdaLiquidationPairFactory();
-    }
-    _liquidationPairFactory = liquidationPairFactory_;
-
-    emit LiquidationRouterCreated(liquidationPairFactory_);
-  }
-
-  /* ============ External Methods ============ */
-
-  /// @notice Swaps the given amount of output tokens for at most input tokens
-  /// @param _liquidationPair The pair to swap against
-  /// @param _receiver The account to receive the output tokens
-  /// @param _amountOut The exact amount of output tokens expected
-  /// @param _amountInMax The maximum of input tokens to spend
-  /// @param _deadline The timestamp that the swap must be completed by
-  /// @return The actual number of input tokens used
-  function swapExactAmountOut(
-    TpdaLiquidationPair _liquidationPair,
-    address _receiver,
-    uint256 _amountOut,
-    uint256 _amountInMax,
-    uint256 _deadline
-  ) external onlyTrustedTpdaLiquidationPair(_liquidationPair) returns (uint256) {
-    if (block.timestamp > _deadline) {
-      revert SwapExpired(_deadline);
-    }
-
-    uint256 amountIn = _liquidationPair.swapExactAmountOut(
-      address(this),
-      _amountOut,
-      _amountInMax,
-      abi.encode(msg.sender)
+    /// @notice Emitted after a swap occurs
+    /// @param liquidationPair The pair that was swapped against
+    /// @param sender The address that initiated the swap
+    /// @param receiver The address that received the output tokens
+    /// @param amountOut The amount of output tokens received
+    /// @param amountInMax The maximum amount of input tokens that could have been used
+    /// @param amountIn The amount of input tokens that were actually used
+    /// @param deadline The deadline for the swap
+    event SwappedExactAmountOut(
+        TpdaLiquidationPair indexed liquidationPair,
+        address indexed sender,
+        address indexed receiver,
+        uint256 amountOut,
+        uint256 amountInMax,
+        uint256 amountIn,
+        uint256 deadline
     );
 
-    IERC20(_liquidationPair.tokenOut()).safeTransfer(_receiver, _amountOut);
+    /* ============ Variables ============ */
 
-    emit SwappedExactAmountOut(
-      _liquidationPair,
-      msg.sender,
-      _receiver,
-      _amountOut,
-      _amountInMax,
-      amountIn,
-      _deadline
-    );
+    /// @notice The TpdaLiquidationPairFactory that this router uses.
+    /// @dev TpdaLiquidationPairs will be checked to ensure they were created by the factory
+    TpdaLiquidationPairFactory internal immutable _liquidationPairFactory;
 
-    return amountIn;
-  }
+    /// @notice Constructs a new LiquidationRouter
+    /// @param liquidationPairFactory_ The factory that pairs will be verified to have been created by
+    constructor(TpdaLiquidationPairFactory liquidationPairFactory_) {
+        if (address(liquidationPairFactory_) == address(0)) {
+            revert UndefinedTpdaLiquidationPairFactory();
+        }
+        _liquidationPairFactory = liquidationPairFactory_;
 
-  /// @inheritdoc IFlashSwapCallback
-  function flashSwapCallback(
-    address _sender,
-    uint256 _amountIn,
-    uint256,
-    bytes calldata _flashSwapData
-  ) external override onlyTrustedTpdaLiquidationPair(TpdaLiquidationPair(msg.sender)) onlySelf(_sender) {
-    address _originalSender = abi.decode(_flashSwapData, (address));
-    IERC20(TpdaLiquidationPair(msg.sender).tokenIn()).safeTransferFrom(
-      _originalSender,
-      TpdaLiquidationPair(msg.sender).target(),
-      _amountIn
-    );
-  }
-
-  /// @notice Checks that the given pair was created by the factory
-  /// @param _liquidationPair The pair to check
-  modifier onlyTrustedTpdaLiquidationPair(TpdaLiquidationPair _liquidationPair) {
-    if (!_liquidationPairFactory.deployedPairs(_liquidationPair)) {
-      revert UnknownTpdaLiquidationPair(_liquidationPair);
+        emit LiquidationRouterCreated(liquidationPairFactory_);
     }
-    _;
-  }
 
-  /// @notice Checks that the given address matches this contract
-  /// @param _sender The address that called the liquidation pair
-  modifier onlySelf(address _sender) {
-    if (_sender != address(this)) {
-      revert InvalidSender(_sender);
+    /* ============ External Methods ============ */
+
+    /// @notice Swaps the given amount of output tokens for at most input tokens
+    /// @param _liquidationPair The pair to swap against
+    /// @param _receiver The account to receive the output tokens
+    /// @param _amountOut The exact amount of output tokens expected
+    /// @param _amountInMax The maximum of input tokens to spend
+    /// @param _deadline The timestamp that the swap must be completed by
+    /// @return The actual number of input tokens used
+    function swapExactAmountOut(
+        TpdaLiquidationPair _liquidationPair,
+        address _receiver,
+        uint256 _amountOut,
+        uint256 _amountInMax,
+        uint256 _deadline
+    ) external onlyTrustedTpdaLiquidationPair(_liquidationPair) returns (uint256) {
+        if (block.timestamp > _deadline) {
+            revert SwapExpired(_deadline);
+        }
+
+        uint256 amountIn = _liquidationPair.swapExactAmountOut(
+            address(this),
+            _amountOut,
+            _amountInMax,
+            abi.encode(msg.sender)
+        );
+
+        IERC20(_liquidationPair.tokenOut()).safeTransfer(_receiver, _amountOut);
+
+        emit SwappedExactAmountOut(
+            _liquidationPair,
+            msg.sender,
+            _receiver,
+            _amountOut,
+            _amountInMax,
+            amountIn,
+            _deadline
+        );
+
+        return amountIn;
     }
-    _;
-  }
+
+    /// @inheritdoc IFlashSwapCallback
+    function flashSwapCallback(
+        address _sender,
+        uint256 _amountIn,
+        uint256,
+        bytes calldata _flashSwapData
+    ) external override onlyTrustedTpdaLiquidationPair(TpdaLiquidationPair(msg.sender)) onlySelf(_sender) {
+        address _originalSender = abi.decode(_flashSwapData, (address));
+        IERC20(TpdaLiquidationPair(msg.sender).tokenIn()).safeTransferFrom(
+            _originalSender,
+            TpdaLiquidationPair(msg.sender).target(),
+            _amountIn
+        );
+    }
+
+    /// @notice Checks that the given pair was created by the factory
+    /// @param _liquidationPair The pair to check
+    modifier onlyTrustedTpdaLiquidationPair(TpdaLiquidationPair _liquidationPair) {
+        if (!_liquidationPairFactory.deployedPairs(_liquidationPair)) {
+            revert UnknownTpdaLiquidationPair(_liquidationPair);
+        }
+        _;
+    }
+
+    /// @notice Checks that the given address matches this contract
+    /// @param _sender The address that called the liquidation pair
+    modifier onlySelf(address _sender) {
+        if (_sender != address(this)) {
+            revert InvalidSender(_sender);
+        }
+        _;
+    }
 }
