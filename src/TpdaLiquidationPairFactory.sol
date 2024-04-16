@@ -44,6 +44,7 @@ contract TpdaLiquidationPairFactory {
     /// @param _tokenOut The output token for the pair
     /// @param _targetAuctionPeriod The duration of auctions
     /// @param _targetAuctionPrice The initial auction price
+    /// @param _smoothingFactor The degree of smoothing to apply to the available token balance
     /// @return The new liquidation pair
     function createPair(
         ILiquidationSource _source,
