@@ -31,7 +31,7 @@ contract TpdaLiquidationPairTest is Test {
     ILiquidationSource source;
     IERC20 tokenIn;
     IERC20 tokenOut;
-    uint256 targetAuctionPeriod;
+    uint64 targetAuctionPeriod;
     uint192 minimumAuctionAmount;
 
     IFlashSwapCallback receiver;
