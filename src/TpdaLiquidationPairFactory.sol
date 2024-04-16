@@ -22,7 +22,7 @@ contract TpdaLiquidationPairFactory {
         ILiquidationSource source,
         address indexed tokenIn,
         address indexed tokenOut,
-        uint256 targetAuctionPeriod,
+        uint64 targetAuctionPeriod,
         uint192 targetAuctionPrice,
         uint256 smoothingFactor
     );
@@ -50,7 +50,7 @@ contract TpdaLiquidationPairFactory {
         ILiquidationSource _source,
         address _tokenIn,
         address _tokenOut,
-        uint256 _targetAuctionPeriod,
+        uint64 _targetAuctionPeriod,
         uint192 _targetAuctionPrice,
         uint256 _smoothingFactor
     ) external returns (TpdaLiquidationPair) {

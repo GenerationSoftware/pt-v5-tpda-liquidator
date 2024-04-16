@@ -14,7 +14,7 @@ contract TpdaLiquidationPairFactoryTest is Test {
   address public target;
   address tokenIn;
   address tokenOut;
-  uint32 targetAuctionPeriod = 1 hours;
+  uint64 targetAuctionPeriod = 1 hours;
   uint192 auctionTargetPrice = 1e18;
   uint256 smoothing = 0.1e18;
 
@@ -25,7 +25,7 @@ contract TpdaLiquidationPairFactoryTest is Test {
     ILiquidationSource source,
     address indexed tokenIn,
     address indexed tokenOut,
-    uint256 targetAuctionPeriod,
+    uint64 targetAuctionPeriod,
     uint192 targetAuctionPrice,
     uint256 smoothingFactor
   );

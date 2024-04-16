@@ -80,7 +80,7 @@ contract TpdaLiquidationPair is ILiquidationPair {
         ILiquidationSource _source,
         address __tokenIn,
         address __tokenOut,
-        uint256 _targetAuctionPeriod,
+        uint64 _targetAuctionPeriod,
         uint192 _targetAuctionPrice,
         uint256 _smoothingFactor
     ) {
