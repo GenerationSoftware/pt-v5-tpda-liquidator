@@ -12,7 +12,7 @@ import { TpdaLiquidationPairFactory } from "./TpdaLiquidationPairFactory.sol";
 error UndefinedTpdaLiquidationPairFactory();
 
 /// @notice Throw when the liquidation pair was not created by the liquidation pair factory
-error UnknownTpdaLiquidationPair(TpdaLiquidationPair liquidationPair);
+error UnknownTpdaLiquidationPair(address liquidationPair);
 
 /// @notice Thrown when a swap deadline has passed
 error SwapExpired(uint256 deadline);
@@ -81,7 +81,7 @@ contract TpdaLiquidationRouter is IFlashSwapCallback {
         uint256 _amountOut,
         uint256 _amountInMax,
         uint256 _deadline
-    ) external onlyTrustedTpdaLiquidationPair(_liquidationPair) returns (uint256) {
+    ) external onlyTrustedTpdaLiquidationPair(address(_liquidationPair)) returns (uint256) {
         if (block.timestamp > _deadline) {
             revert SwapExpired(_deadline);
         }
@@ -114,7 +114,7 @@ contract TpdaLiquidationRouter is IFlashSwapCallback {
         uint256 _amountIn,
         uint256,
         bytes calldata _flashSwapData
-    ) external override onlyTrustedTpdaLiquidationPair(TpdaLiquidationPair(msg.sender)) onlySelf(_sender) {
+    ) external override onlyTrustedTpdaLiquidationPair(msg.sender) onlySelf(_sender) {
         address _originalSender = abi.decode(_flashSwapData, (address));
         IERC20(TpdaLiquidationPair(msg.sender).tokenIn()).safeTransferFrom(
             _originalSender,
@@ -124,8 +124,8 @@ contract TpdaLiquidationRouter is IFlashSwapCallback {
     }
 
     /// @notice Checks that the given pair was created by the factory
-    /// @param _liquidationPair The pair to check
-    modifier onlyTrustedTpdaLiquidationPair(TpdaLiquidationPair _liquidationPair) {
+    /// @param _liquidationPair The pair address to check
+    modifier onlyTrustedTpdaLiquidationPair(address _liquidationPair) {
         if (!_liquidationPairFactory.deployedPairs(_liquidationPair)) {
             revert UnknownTpdaLiquidationPair(_liquidationPair);
         }

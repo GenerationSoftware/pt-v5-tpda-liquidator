@@ -61,7 +61,7 @@ contract TpdaLiquidationRouterTest is Test {
     );
     vm.mockCall(
       address(factory),
-      abi.encodeCall(factory.deployedPairs, liquidationPair),
+      abi.encodeCall(factory.deployedPairs, address(liquidationPair)),
       abi.encode(true)
     );
 
@@ -129,7 +129,7 @@ contract TpdaLiquidationRouterTest is Test {
   function testFlashSwapCallback_UnknownLiquidationPair() public {
     vm.mockCall(
       address(factory),
-      abi.encodeCall(factory.deployedPairs, TpdaLiquidationPair(address(this))),
+      abi.encodeCall(factory.deployedPairs, address(this)),
       abi.encode(false)
     );
     vm.expectRevert(abi.encodeWithSelector(UnknownTpdaLiquidationPair.selector, address(this)));
@@ -156,7 +156,7 @@ contract TpdaLiquidationRouterTest is Test {
   function testSwapExactAmountOut_UnknownLiquidationPair() public {
     vm.mockCall(
       address(factory),
-      abi.encodeCall(factory.deployedPairs, liquidationPair),
+      abi.encodeCall(factory.deployedPairs, address(liquidationPair)),
       abi.encode(false)
     );
     vm.expectRevert(abi.encodeWithSelector(UnknownTpdaLiquidationPair.selector, liquidationPair));
