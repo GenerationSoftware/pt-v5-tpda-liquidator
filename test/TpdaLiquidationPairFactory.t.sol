@@ -74,7 +74,7 @@ contract TpdaLiquidationPairFactoryTest is Test {
     assertEq(factory.totalPairs(), 1, "one pair exists");
     assertEq(address(factory.allPairs(0)), address(lp), "pair is in array");
 
-    assertTrue(factory.deployedPairs(lp));
+    assertTrue(factory.deployedPairs(address(lp)));
 
     assertEq(address(lp.source()), source);
     assertEq(address(lp.tokenIn()), tokenIn);

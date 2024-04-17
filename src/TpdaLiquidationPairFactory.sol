@@ -35,8 +35,7 @@ contract TpdaLiquidationPairFactory {
     /* ============ Mappings ============ */
 
     /// @notice Mapping to verify if a TpdaLiquidationPair has been deployed via this factory.
-    /// @dev TpdaLiquidationPair address => boolean
-    mapping(TpdaLiquidationPair => bool) public deployedPairs;
+    mapping(address pair => bool wasDeployed) public deployedPairs;
 
     /// @notice Creates a new TpdaLiquidationPair and registers it within the factory
     /// @param _source The liquidation source that the pair will use
@@ -64,7 +63,7 @@ contract TpdaLiquidationPairFactory {
         );
 
         allPairs.push(_liquidationPair);
-        deployedPairs[_liquidationPair] = true;
+        deployedPairs[address(_liquidationPair)] = true;
 
         emit PairCreated(
             _liquidationPair,
