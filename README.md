@@ -5,6 +5,10 @@
 
 The TpdaLiquidationPair is designed to periodically liquidate accrued yield on PoolTogether V5 vaults.  The Target Period Dutch Auction adjusts the price so that an auction occurs every X seconds.
 
+## Deployments
+
+For the latest deployment check the [PoolTogether Deployments](https://dev.pooltogether.com/protocol/deployments/)
+
 ## Motivation
 
 In PoolTogether V5, Vaults must contribute to each draw in order to be eligible to win prizes. We needed a pricing algorithm that tries to ensure that vault yield is liquidated every X number of seconds.
